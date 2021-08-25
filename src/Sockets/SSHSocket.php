@@ -70,25 +70,31 @@
 		}
 
 		/* {@inheritDoc} */
-		public function connect()
-        {
-            if ($this->connection != null) {
-                return;
-            }
-            $conn = ssh2_connect($this->getHost(), $this->getPort(22));
-            if ($conn === false) {
-                throw new Exception("Unable to connect.");
-            }
-            if (!ssh2_auth_password($conn, $this->getUser(), $this->getPass())) {
-                throw new Exception("Unable to authenticate.");
-            }
-            $this->connection = $conn;
-            if ($this->isDefault) {
-                $this->stream = ssh2_shell($this->connection);
-            } else {
-                $this->stream = ssh2_shell($this->connection, $this->termType, $this->env, $this->termWidth, $this->termHeight, SSH2_TERM_UNIT_CHARS);
-            }
-        }
+		public function connect() {
+			if (!function_exists('ssh2_connect')
+			    || !function_exists('ssh2_auth_password')
+			    || !function_exists('ssh2_shell')
+			    || !defined('SSH2_TERM_UNIT_CHARS')
+			) {
+				throw new Exception('you must to enable php extension ssh2');
+			}
+			if ($this->connection != null) {
+				return;
+			}
+			$conn = ssh2_connect($this->getHost(), $this->getPort(22));
+			if ($conn === false) {
+				throw new Exception("Unable to connect.");
+			}
+			if (!ssh2_auth_password($conn, $this->getUser(), $this->getPass())) {
+				throw new Exception("Unable to authenticate.");
+			}
+			$this->connection = $conn;
+			if ($this->isDefault) {
+				$this->stream = ssh2_shell($this->connection);
+			} else {
+				$this->stream = ssh2_shell($this->connection, $this->termType, $this->env, $this->termWidth, $this->termHeight, SSH2_TERM_UNIT_CHARS);
+			}
+		}
 
 		/* {@inheritDoc} */
 		public function disconnect() {
@@ -102,7 +108,6 @@
 		public function write($data) {
 			if ($this->stream == null) { throw new Exception('Socket not connected'); }
 
-			echo "> $data\n";
 			fwrite($this->stream, $data);
 		}
 
@@ -112,7 +117,6 @@
 
 			stream_set_blocking($this->stream, true);
 			$data = fread($this->stream, $maxBytes);
-            echo "< $data\n";
 			stream_set_blocking($this->stream, false);
 			return $data;
 		}
